@@ -317,4 +317,5 @@ if __name__ == "__main__":
     # Save phantom OCT/structure and RI map
     np.save('phantomR',phantomStructure)
     np.save('phantomRI',phantomRI)
+    np.save('phantom_umpp',(umpp_x,umpp_y))
 
