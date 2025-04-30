@@ -1,6 +1,6 @@
 numpy
 matplotlib
-tensorflow
+tensorflow==1.15
 scikit-image
 opencv-python
 opencv-contrib-python
