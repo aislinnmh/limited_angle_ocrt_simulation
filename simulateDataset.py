@@ -14,8 +14,10 @@ lateralFOV = 1.7
 oct = angularOCTSim2D(sampleID = 'testglass', saveFolder = 'Simulated Dataset', wavelength = wavelength, NA = NA, Ascans = Ascans, zpixels = zpixels, depth = depth, lateralFOV = lateralFOV)
 
 # Angular Sampling Parameters (degrees)
-minAngle = -180
-maxAngle = 179
+# minAngle = -180
+# maxAngle = 179
+minAngle = 0
+maxAngle = 2
 interval = 1 
 angles = np.arange(minAngle,maxAngle+interval,interval)
 
