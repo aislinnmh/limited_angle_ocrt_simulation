@@ -14,7 +14,7 @@ data = scipy.io.loadmat(filename)
 # intervals = 6, 6, 6, 6, 18, 30
 
 # FOR PHANTOM
-center_angle = 90
+center_angle_i = 90
 max_angles = 90, 60, 30, 18, 90, 90
 intervals = 6, 6, 6, 6, 18, 30
 
