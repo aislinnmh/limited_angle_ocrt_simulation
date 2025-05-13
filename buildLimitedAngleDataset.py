@@ -2,7 +2,7 @@ import scipy.io
 import numpy as np
 import os
 
-data_directory = 'Datasets/180-6-180/'
+data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/180-6-180/'
 # sample_id = 'mouse_vas_deferens1'  
 sample_id = 'point_phantom'
 filename = data_directory + sample_id + '_data.mat'
@@ -38,7 +38,7 @@ for i in range(len(max_angles)):
     subsampledData['Bscans'] = subsampledBscans
 
     anglename = str(max_angle) + '-' + str(interval) + '-' + str(max_angle)
-    data_directory = 'Datasets/' + anglename + '/'
+    data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/' + anglename + '/'
     os.mkdir(data_directory)
     filename = data_directory + sample_id + '_data.mat'
     scipy.io.savemat(filename, subsampledData)
