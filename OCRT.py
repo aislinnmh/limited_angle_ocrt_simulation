@@ -127,7 +127,7 @@ class OCRT2D:
 
         self.graph_built = False  # has the graph been built yet?
 
-    def load_data_and_resolve_constants(self, data_directory):
+    def load_data_and_resolve_constants(self, data_directory, max_angle, angle_step):
         # 1. load data based on self.sample_id
         # 2. derive instance variables that depend on others (e.g., the ones defined in the constructor)
 
@@ -154,8 +154,10 @@ class OCRT2D:
             # singletons, expand dims
             Bscans = np.expand_dims(Bscans, -1)
 
-        max_angle, self.angle_step = 360, 360. / Bscans.shape[0]
-        self.ths = np.arange(0, max_angle, self.angle_step).astype(np.float32)
+        # max_angle, self.angle_step = 360, 360. / Bscans.shape[0]
+        # self.ths = np.arange(0, max_angle, self.angle_step).astype(np.float32)
+        self.angle_step = angle_step
+        self.ths = np.arange(-1*max_angle, max_angle+1, self.angle_step).astype(np.float32)
 
         self.numgauss_s = inds_nonzero_.shape[0]
         surround_dists_ = mindists_ * inds_nonzero_
