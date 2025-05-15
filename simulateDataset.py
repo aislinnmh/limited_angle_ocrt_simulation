@@ -2,7 +2,7 @@ from multiAngleOCTSimulation import angularOCTSim2D
 import numpy as np
 from matplotlib import pyplot as plt
 
-
+#simulate psf and stuff
 # OCT Parameters
 wavelength = 1050
 NA = 0.1
