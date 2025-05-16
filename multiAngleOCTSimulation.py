@@ -1,132 +1,121 @@
 import numpy as np
 import tensorflow as tf
-import cv2
-from scipy.fftpack import fft, fftshift, ifft, ifftshift
-import scipy.io
-import scipy.interpolate
 import scipy.ndimage
 import os
 from time import time
+from PIL import Image
 
 class angularOCTSim2D:
 
-    def __init__(self, sampleID, saveFolder, wavelength, NA, Ascans, zpixels, depth, lateralFOV):
+    def __init__(self, sampleID, saveFolder):
 
         self.sampleID= sampleID
         self.saveFolder = saveFolder
 
         self.R = np.load(sampleID + 'R.npy') # reflectivity/structure of sample
         self.RI = np.load(sampleID + 'RI.npy') # refractive index map of sample
-        # self.RI = np.pad(self.RI,((0,500),(1000,1000)),'constant', constant_values = (1,1))
         [self.umpp_x, self.umpp_z] = np.load(sampleID + '_umpp.npy') # microns per initial pixel
-        [self.zdim_i, self.xdim_i] = self.R.shape
+        [self.xdim_i, self.zdim_i] = self.R.shape
 
-        sigblurRI = 5 #um
-        blurRI = scipy.ndimage.gaussian_filter(self.RI,sigma = (sigblurRI/self.umpp_z,sigblurRI/self.umpp_x)) # will need to add rotated version later
-        self.dndz = ((blurRI - scipy.ndimage.shift(blurRI, (1,0))) + (scipy.ndimage.shift(blurRI, (-1,0)) - blurRI))/2
-        self.dndx = ((blurRI - scipy.ndimage.shift(blurRI, (0,1))) + (scipy.ndimage.shift(blurRI, (0,-1)) - blurRI))/2
+    def setParameters(self, angles, Ascans, zpixels, depth, lat_FOV, ax_res, lat_res, mu_t):
 
-        # OCT Parameters
-        self.w = wavelength # nm
-        self.na = NA
+        self.angles = angles
         self.Ascans = Ascans
         self.zpixels = zpixels
-        self.depth = depth # mm
-        self.lateralFOV = lateralFOV # mm
+        self.depth = depth
+        self.lat_FOV = lat_FOV
+        self.ax_res = ax_res
+        self.lat_res = lat_res
+        self.mu_t = mu_t
 
-        # Ray propagation helpers
-        self.step = 1
-        self.nwsig = 0.006
+    def rotate(self):
 
-    def setParameters(self, angles):
-        # OCT Parameters
-        # 
-        
-        # Rotation Matrices 
-        rotmats = list()
-        for a in angles:
-            a *= np.pi/180 # Convert to radians
-            a = a.astype(np.float32)
-            rotmats.append(np.array([[np.cos(a), -np.sin(a)],
-                                    [np.sin(a), np.cos(a)]]))
-        rotmats = np.rollaxis(np.dstack(rotmats), 2, 0).astype(np.float32)
-        self.rotmats = tf.constant(rotmats, name='rotationMatrices')
+        R = Image.fromarray(self.R)
+        [m,n] = self.R.shape
+        rotated = np.zeros((len(self.angles),m,n))
+        for i in range(len(self.angles)):
+            a = self.angles[i]
+            rotatedR = R.rotate(a)
+            rotated[i,:,:] = rotatedR
 
-        # helpers for refraction
-
-    def getRI(self,z,x):
-        return self.RI[np.round(z.numpy()).astype(int),np.round(x.numpy()).astype(int)]
-
-    def getRIderivatives(self,z,x):
-        # dndx = self.RI[np.round(z.numpy()).astype(int),np.round(x.numpy()+1).astype(int)] - self.RI[np.round(z.numpy()).astype(int),np.round(x.numpy()).astype(int)]
-        # dndz = self.RI[np.round(z.numpy()+1).astype(int),np.round(x.numpy()).astype(int)] - self.RI[np.round(z.numpy()).astype(int),np.round(x.numpy()).astype(int)]
-        dndx = self.dndx[np.round(z.numpy()).astype(int),np.round(x.numpy()).astype(int)]
-        dndz = self.dndz[np.round(z.numpy()).astype(int),np.round(x.numpy()).astype(int)]
-        return dndz, dndx
+        self.Rstack = rotated
+        return rotated
     
-    def getXZderivatives(self,z0,x0):
-        dxdz1 = x0[:,1]
+    def createPSF(self): 
 
-        [dndz, dndx] = self.getRIderivatives(z0,x0[:,0])
-        n = self.getRI(z0,x0[:,0])
+        xsig = self.lat_res/self.umpp_x
+        zsig = self.ax_res/self.umpp_z
 
-        dxdz2 = 1. / n * (dndx * (1 + dxdz1 ** 2) - dndz * dxdz1)
+        Lfactor = 5
+        xdim_kernel = round(xsig*Lfactor)
+        zdim_kernel = round(zsig*Lfactor)
 
-        derivs = tf.stack([dxdz1, dxdz2], 1)
-        return derivs
+        x = np.array(range(xdim_kernel))
+        xmu = round(len(x)/2)
+        x = 1/(xsig*np.sqrt(2*np.pi))*np.exp(-0.5*((x-xmu)**2)/(xsig*82))
+        x = np.expand_dims(x,axis=1)
+        xpsf = tf.tile(x,[1,zdim_kernel])
 
-    def step_rk4(self,xz0,dummy):
-        # Propagate ray through sample's RI distribution one step, adpated version of rk4_step_opl() and rayeq_opl() in OCRT.py
-        # xz0 = current position
-        # dummy: tf.scan requires passing a second argument, not actually needed
+        z = np.array(range(zdim_kernel))
+        zmu = round(len(z)/2)
+        z = 1/(zsig*np.sqrt(2*np.pi))*np.exp(-0.5*((z-zmu)**2)/(zsig*82))
+        z = np.expand_dims(z,axis=0)
+        zpsf = tf.tile(z,[xdim_kernel,1])
 
-        z0 = xz0[:,0] # pixel
-        x0 = xz0[:,1:3] # starts with 0 for 2nd, gradient 
+        psf = tf.multiply(xpsf,zpsf)
+        # psf = np.expand_dims(psf,axis=0)
 
-        # Get current RI  and dXdz derivative 
-        n = self.getRI(z0,x0[:,0])
+        return psf
+    
+    def convolvePSF(self):
 
-        # Define step size with index and derivative at the current step
-        h = self.step / n
-        hstack = tf.stack([h,h], 1)
-        half_h = h * .5
+        psf = self.createPSF()
+        psf = np.expand_dims(psf,axis=len(psf.shape))
+        psf = np.expand_dims(psf,axis=len(psf.shape))
+        # print(psf.shape)
 
-        # Runge-Kutta, perform to get first deriv and second deriv at once
-        k1 = self.getXZderivatives(z0,x0)
+        Rstack = np.expand_dims(self.Rstack,axis=len(self.Rstack.shape))
+        # print(Rstack.shape)
 
-        z2 = z0 + half_h
-        x2 = x0 + hstack*(k1 / 2)
-        k2 = self.getXZderivatives(z2,x2)
+        convolved = tf.conv(Rstack, psf, strides = (1,1,1,1), padding = "VALID", batch_dims = 1)
 
-        z3 = z2
-        x3 = x0 + hstack*(k2/2)
-        k3 = self.getXZderivatives(z3,x3)
+        self.Rstack = convolved
+        return convolved
+    
+    def attenuate(self):
 
-        z4 = z0 + h
-        x4 = x0 + hstack*k3
-        k4 = self.getXZderivatives(z4,x4)
+        attenuated = 1
 
-        xnew = x0 + (k1 + 2. * k2 + 2 * k3 + k4) / 6.
-        znew = z4
+        z = np.array(range(self.zdim_i))
+        z = z * self.umpp_z / 1000 # mm
+        attenuation = np.exp(-1 * self.mu_t * z)
+        z = np.expand_dims(z,axis=0)
+        z = tf.tile(z,[self.xdim_i,1])
+        z = np.expand_dims(z,axis=0)
+        z = tf.tile(z,[len(self.angles),1,1])
 
-        xznew = tf.concat([tf.expand_dims(znew,1),xnew],1)
-        return xznew
+        attenuated = tf.multiply(self.Rstack, attenuation)
 
+        self.Rstack = attenuated
+        return attenuated
+    
+    def resample(self):
+        
+        resampled = np.zeros((len(self.angles),self.Ascans,self.zpixels))
+        Rstack = np.array(self.Rstack, dtype=float)
+        print(resampled.shape)
 
-    def propagateRays(self):
-        # Propagate rays through sample's RI distribution, adpated version of integrate_scan_opl() in OCRT.py
+        for i in range(len(self.angles)):
+            R = Image.fromarray(Rstack[0,:,:])
+            resampledR = R.resize((self.zpixels,self.Ascans))
+            resampled[i,:,:] = resampledR
 
-        x0 = np.arange(200,self.xdim_i-200,1)
+        self.Rstack = resampled
+        return resampled
+    
+    def getUMDims(self):
+        
+        umpp_x_new = self.xdim_i * self.umpp_x  / self.Ascans
+        umpp_z_new = self.zdim_i * self.umpp_z  / self.zpixels
 
-        z0 = np.zeros((len(x0),))
-        dxdz0 = np.zeros((len(x0),))
-        xz0 = tf.stack([z0,x0,dxdz0],1)
-
-        dummy = tf.ones((self.zdim_i),) # Controls how many z steps will be performed
-
-        paths = tf.scan(self.step_rk4, dummy, xz0, swap_memory=True)
-
-        paths = paths[:,:,0:2] # throw out dxdz
-        # Ends up as zpix x xpix x axes, where axis 1 is real zpos and 2 is real xpos
-
-        return paths
+        return umpp_x_new, umpp_z_new

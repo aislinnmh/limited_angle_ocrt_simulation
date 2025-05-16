@@ -2,42 +2,59 @@ from multiAngleOCTSimulation import angularOCTSim2D
 import numpy as np
 from matplotlib import pyplot as plt
 
-#simulate psf and stuff
-# OCT Parameters
-wavelength = 1050
-NA = 0.1
-Ascans = 1200
-zpixels = 2048,
-depth = 3
-lateralFOV = 1.7
-
-oct = angularOCTSim2D(sampleID = 'testglass', saveFolder = 'Simulated Dataset', wavelength = wavelength, NA = NA, Ascans = Ascans, zpixels = zpixels, depth = depth, lateralFOV = lateralFOV)
+# This simulation accounts for:
+# - angled acquisition
+# - nominal PSF of the OCT system
+# - axial attenuation
+#
+# Assumptions made in this simulation:
+# - ignoring refraction (minimal, for poin scatterers)
+# - ignoring depth of field (keeping PSF constant throughout FOV)
+# - orientation = x (up/down) by z (left/right) to match data sampling in OCRT.py
+sampleID = 'phantom'
+saveFolder = 'Simulated Dataset'
+oct = angularOCTSim2D(sampleID, saveFolder)
 
 # Angular Sampling Parameters (degrees)
-# minAngle = -180
-# maxAngle = 179
-minAngle = 0
-maxAngle = 2
-interval = 1 
+minAngle = -18
+maxAngle = 18
+interval = 6
 angles = np.arange(minAngle,maxAngle+interval,interval)
+print(angles)
 
-oct.setParameters(angles = angles)
+# OCT Parameters (matched to the sample data)
+# wavelength = 820 # nm
+Ascans = 500
+zpixels = 2048
+depth = 2.22 # mm
+lat_FOV = 1.5 # mm
+ax_res = 1.2 # um
+lat_res  = 8.5 # um
+mu_t = 1 # mm^-1 # FIX
 
-paths = oct.propagateRays()
+# CHECK RESOLUTION conversions, check sampling, check mu
 
-paths = paths.numpy()
-plt.figure()
-for i in np.arange(0,1600,50):
-    plt.plot(paths[:,i,1],paths[:,i,0])
-plt.imshow(oct.RI)
+oct.setParameters(angles, Ascans, zpixels, depth, lat_FOV, ax_res, lat_res, mu_t)
+oct.rotate()
+# result = oct.convolvePSF() 
+oct.attenuate()
+result = oct.resample()
+
+[umpp_x,umpp_z] = oct.getUMDims()
+
+# Show maps
+plt.figure(figsize=(24,10))
+plt.subplot(1,2,1)
+f = plt.imshow(result[0,:,:], extent = [0,zpixels*umpp_z/1000,0,Ascans*umpp_x/1000]) 
+cbar = plt.colorbar(f, fraction=0.046, pad=0.04)
+plt.subplot(1,2,2)
+f = plt.imshow(result[len(angles)-1,:,:], extent = [0,zpixels*umpp_z/1000,0,Ascans*umpp_x/1000]) 
+cbar = plt.colorbar(f, fraction=0.046, pad=0.04)
 plt.show()
+print('plotted')
 
-# print(paths[950,:,1])
-
-# rotate
-# Refract ray trajectories  - makle into a big stack
-# warp by rotated refraction - code within backproijection to trilinear interp from nearest coord
-# Signal formation - inc beam size gaussian
-# IFT
 # Save
+# anglename = str(maxAngle) + '-' + str(interval) + '-' + str(maxAngle)
+# data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/' + anglename + '/'  
+# np.save(data_directory + sampleID + '_data.mat', result)
 
