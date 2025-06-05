@@ -1,6 +1,8 @@
 from multiAngleOCTSimulation import angularOCTSim2D
 import numpy as np
 from matplotlib import pyplot as plt
+import scipy.io
+
 
 # This simulation accounts for:
 # - angled acquisition
@@ -36,9 +38,10 @@ mu_t = depth/2 # mm^-1 # Arbitrary bu realistic - no falloff info given
 
 oct.setParameters(angles, Ascans, zpixels, depth, lat_FOV, ax_res, lat_res, mu_t)
 oct.rotate()
-# result = oct.convolvePSF() 
+# oct.convolvePSF() 
 oct.attenuate() 
 result = oct.resample()
+# print(result.shape)
 
 [umpp_x,umpp_z] = oct.getUMDims()
 
@@ -54,7 +57,27 @@ plt.show()
 print('plotted')
 
 # Save
-# anglename = str(maxAngle) + '-' + str(interval) + '-' + str(maxAngle)
-# data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/' + anglename + '/'  
-# np.save(data_directory + sampleID + '_data.mat', result)
+anglename = str(maxAngle) + '-' + str(interval) + '-' + str(maxAngle)
+# data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/'   
+data_directory = 'c:/Users/William Bundrant/OneDrive/Documents/Aislinn/GitHub/Datasets/'
+filename = data_directory + sampleID + '_data.mat'
 
+data = {}
+data['Bscans'] = result
+data['basename'] = 'phantom'
+data['Bscan_dims'] = [zpixels,Ascans]
+xzcoords = np.zeros((len(angles),Ascans,2))
+xzcoords[:,:,0] = np.tile(np.linspace(0,1,Ascans),(len(angles),1))
+data['xzcoords'] = xzcoords
+data['tweaks'] = np.zeros((len(angles),2))
+data['window'] = np.ones((128,128)).astype(np.int64)
+data['L'] = 1
+data['radii'] = 0
+data['mindists'] = np.zeros((128,128))
+# Just taken from a sample arbitrarily
+data['center'] = [0.4985, 0.3402] 
+data['weights'] = np.ones((zpixels,Ascans)) * 2.364e-7
+
+
+
+scipy.io.savemat(filename, data)
