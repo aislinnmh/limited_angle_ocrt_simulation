@@ -43,8 +43,11 @@ class angularOCTSim2D:
     
     def createPSF(self): 
 
-        xsig = self.lat_res/self.umpp_x
-        zsig = self.ax_res/self.umpp_z
+        # Convert FWHM of gaussian to its sigma = FWHM / 2.35482, then to pixels
+        xsig = self.lat_res/2.35482
+        zsig = self.ax_res/2.35482
+        xsig = xsig/self.umpp_x
+        zsig = zsig/self.umpp_z
 
         Lfactor = 5
         xdim_kernel = round(xsig*Lfactor)

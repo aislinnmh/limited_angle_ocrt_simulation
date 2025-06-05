@@ -30,14 +30,14 @@ depth = 2.22 # mm
 lat_FOV = 1.5 # mm
 ax_res = 1.2 # um
 lat_res  = 8.5 # um
-mu_t = 1 # mm^-1 # FIX
+mu_t = depth/2 # mm^-1 # Arbitrary bu realistic - no falloff info given
 
 # CHECK RESOLUTION conversions, check sampling, check mu
 
 oct.setParameters(angles, Ascans, zpixels, depth, lat_FOV, ax_res, lat_res, mu_t)
 oct.rotate()
 # result = oct.convolvePSF() 
-oct.attenuate()
+oct.attenuate() 
 result = oct.resample()
 
 [umpp_x,umpp_z] = oct.getUMDims()

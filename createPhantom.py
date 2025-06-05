@@ -22,54 +22,108 @@ def createPointScatterers(pointsOCT,n,d,R,xdim,ydim,umpp_x,umpp_y):
     # R = OCT Reflectivity
     # RI = refractive index
     # iRI = refractive index inside tube (background)
-
+    
     rad = d/2
 
     mask = np.zeros((ydim,xdim))
 
-    maxDist = ydim/2 * 0.8 # don't want it at edge
-    eligibleDists = []
-    for i in range(1,n):
-        eligibleDists.append(maxDist/i)
-    print(eligibleDists)
+    if n <= 10:
 
-    cenx = int(xdim/2) + 1
-    ceny = int(ydim/2) + 1
+        maxDist = ydim/2 * 0.8 # don't want it at edge
+        eligibleDists = []
+        for i in range(1,n):
+            eligibleDists.append(maxDist/i)
+        print(eligibleDists)
 
-    for i in range(n):
+        cenx = int(xdim/2) + 1
+        ceny = int(ydim/2) + 1
 
-        if i == 0:
-            # Make one scatterer at center
-            x = cenx
-            y = ceny
-        else: 
-            # Place other scatterers randomly but evenly around
+        for i in range(n):
 
-            # Split possible locations evenly by angle
-            interval = int(180/(n-1))
-            eligibleAngles = range(i*interval + 5,(i+1)*interval - 5)
-            angle = random.sample(eligibleAngles, 1)
+            if i == 0:
+                # Make one scatterer at center
+                x = cenx
+                y = ceny
+            else: 
+                # Place other scatterers randomly but evenly around
 
-            # Choose a distance from center, evenly spaced intervals
-            dist = random.sample(eligibleDists, 1)
-            eligibleDists.remove(dist[0])
+                # Split possible locations evenly by angle
+                interval = int(180/(n-1))
+                eligibleAngles = range(i*interval + 5,(i+1)*interval - 5)
+                angle = random.sample(eligibleAngles, 1)
 
-            x = np.cos(angle[0]/180*np.pi)*dist[0] + cenx
-            y = np.sin(angle[0]/180*np.pi)*dist[0] + ceny
-            print(angle[0])
-            print(dist)
+                # Choose a distance from center, evenly spaced intervals
+                dist = random.sample(eligibleDists, 1)
+                eligibleDists.remove(dist[0])
 
-        # Create grid of distances from center in mm
-        x = (np.arange(xdim)-x) * umpp_x/1000 # pixels --> centered --> mm
-        y = (np.arange(ydim)-y) * umpp_y/1000 # pixels --> centered --> mm
-        xgrid, ygrid = np.meshgrid(x,y)
-        d = np.sqrt(xgrid**2 + ygrid**2)
+                x = np.cos(angle[0]/180*np.pi)*dist[0] + cenx
+                y = np.sin(angle[0]/180*np.pi)*dist[0] + ceny
+                print(angle[0])
+                print(dist)
 
-        pointMask = (d<rad).astype(int)                  # Mask area of circle
-        mask = mask + pointMask
+            # Create grid of distances from center in mm
+            x = (np.arange(xdim)-x) * umpp_x/1000 # pixels --> centered --> mm
+            y = (np.arange(ydim)-y) * umpp_y/1000 # pixels --> centered --> mm
+            xgrid, ygrid = np.meshgrid(x,y)
+            d = np.sqrt(xgrid**2 + ygrid**2)
 
-    mask = mask.astype(bool)
-    pointsOCT[mask] = R
+            pointMask = (d<rad).astype(int)                  # Mask area of circle
+            mask = mask + pointMask
+
+        mask = mask.astype(bool)
+        pointsOCT[mask] = R
+
+    else:
+
+        eligibleMask = np.ones((ydim,xdim))
+
+
+        cenx = int(xdim/2) + 1
+        ceny = int(ydim/2) + 1
+
+        # Only place beads within "tube"
+        for i in range(ydim):
+            for j in range(xdim):
+                y = i - ceny
+                x = j - cenx
+
+                d = np.sqrt(x**2 + y**2)
+                if d > (0.8*ydim/2):
+                    eligibleMask[i,j] = 0
+
+        for i in range(n):
+
+            if i == 0:
+                # Make one scatterer at center
+                x = cenx
+                y = ceny
+            else: 
+                # Place other scatterers randomly everywhere, but not too close to each other
+
+                # Sample a random location
+                eligibleXY = np.argwhere(eligibleMask)
+                eligibleI = range(len(eligibleXY))
+                I = random.sample(eligibleI, 1)
+                XY = eligibleXY[I,:]
+
+                x = XY[0,1]
+                y = XY[0,0]
+
+            # Create grid of distances from center in mm
+            x = (np.arange(xdim)-x) * umpp_x/1000 # pixels --> centered --> mm
+            y = (np.arange(ydim)-y) * umpp_y/1000 # pixels --> centered --> mm
+            xgrid, ygrid = np.meshgrid(x,y)
+            d = np.sqrt(xgrid**2 + ygrid**2)
+
+            pointMask = (d<rad).astype(int)                  # Mask area of circle
+            mask = mask + pointMask
+
+            # Remove nearby pixels from potential locations
+            nearbyMask = (d<(4*rad)).astype(int)
+            eligibleMask = eligibleMask - nearbyMask
+
+        mask = mask.astype(bool)
+        pointsOCT[mask] = R
 
     return pointsOCT
 
@@ -87,10 +141,10 @@ if __name__ == "__main__":
     phantomRI[:,:] = 1.33
 
     # Add sub-beam size scatterers to phantom, center and two off-center
-    n=3
+    n = 100
     d = 0.01 #mm
     R = 1e5
-    phantomStructure = createPointScatterers(phantomStructure, 3, 0.01, 1e5, xdim, ydim, umpp_x, umpp_y)
+    phantomStructure = createPointScatterers(phantomStructure, n, d, R, xdim, ydim, umpp_x, umpp_y)
 
     # Show maps
     plt.figure(figsize=(24,10))
