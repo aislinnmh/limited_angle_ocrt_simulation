@@ -26,7 +26,7 @@ class angularOCTSim2D:
         self.lat_FOV = lat_FOV
         self.ax_res = ax_res
         self.lat_res = lat_res
-        self.mu_t = mu_t
+        self.mu_t = mu_t 
 
     def rotate(self):
 
@@ -73,25 +73,21 @@ class angularOCTSim2D:
     def convolvePSF(self):
 
         psf = self.createPSF()
-        psf = np.expand_dims(psf,axis=len(psf.shape))
-        psf = np.expand_dims(psf,axis=len(psf.shape))
-        # print(psf.shape)
+        psf = np.expand_dims(psf,axis=0)
+        print(psf.shape)
 
-        Rstack = np.expand_dims(self.Rstack,axis=len(self.Rstack.shape))
         # print(Rstack.shape)
 
-        convolved = tf.conv(Rstack, psf, strides = (1,1,1,1), padding = "VALID", batch_dims = 1)
+        convolved = scipy.ndimage.convolve(self.Rstack, psf)
 
         self.Rstack = convolved
         return convolved
     
     def attenuate(self):
 
-        attenuated = 1
-
         z = np.array(range(self.zdim_i))
         z = z * self.umpp_z / 1000 # mm
-        attenuation = np.exp(-1 * self.mu_t * z)
+        attenuation = np.exp(-1 * self.mu_t * z) # CHECK TYPE OF ATTEN
         z = np.expand_dims(z,axis=0)
         z = tf.tile(z,[self.xdim_i,1])
         z = np.expand_dims(z,axis=0)
@@ -109,7 +105,7 @@ class angularOCTSim2D:
         print(resampled.shape)
 
         for i in range(len(self.angles)):
-            R = Image.fromarray(Rstack[0,:,:])
+            R = Image.fromarray(Rstack[i,:,:])
             resampledR = R.resize((self.zpixels,self.Ascans))
             resampled[i,:,:] = resampledR
 

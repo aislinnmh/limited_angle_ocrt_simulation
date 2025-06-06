@@ -32,22 +32,20 @@ depth = 2.22 # mm
 lat_FOV = 1.5 # mm
 ax_res = 1.2 # um
 lat_res  = 8.5 # um
-mu_t = depth/2 # mm^-1 # Arbitrary bu realistic - no falloff info given
-
-# CHECK RESOLUTION conversions, check sampling, check mu
+mu_t = depth/2 # mm^-1 # Arbitrary but realistic - no falloff info given
 
 oct.setParameters(angles, Ascans, zpixels, depth, lat_FOV, ax_res, lat_res, mu_t)
 oct.rotate()
-# oct.convolvePSF() 
+oct.convolvePSF() 
 oct.attenuate() 
 result = oct.resample()
-# print(result.shape)
 
 [umpp_x,umpp_z] = oct.getUMDims()
 
 # Show maps
 plt.figure(figsize=(24,10))
 plt.subplot(1,2,1)
+# f = plt.imshow(oct.R, extent = [0,zpixels*umpp_z/1000,0,Ascans*umpp_x/1000]) # original phantom, for testing
 f = plt.imshow(result[0,:,:], extent = [0,zpixels*umpp_z/1000,0,Ascans*umpp_x/1000]) 
 cbar = plt.colorbar(f, fraction=0.046, pad=0.04)
 plt.subplot(1,2,2)
@@ -58,8 +56,8 @@ print('plotted')
 
 # Save
 anglename = str(maxAngle) + '-' + str(interval) + '-' + str(maxAngle)
-# data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/'   
-data_directory = 'c:/Users/William Bundrant/OneDrive/Documents/Aislinn/GitHub/Datasets/'
+data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/'   
+# data_directory = 'c:/Users/William Bundrant/OneDrive/Documents/Aislinn/GitHub/Datasets/'
 filename = data_directory + sampleID + '_data.mat'
 
 data = {}
@@ -77,7 +75,5 @@ data['mindists'] = np.zeros((128,128))
 # Just taken from a sample arbitrarily
 data['center'] = [0.4985, 0.3402] 
 data['weights'] = np.ones((zpixels,Ascans)) * 2.364e-7
-
-
 
 scipy.io.savemat(filename, data)
