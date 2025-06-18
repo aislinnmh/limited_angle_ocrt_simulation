@@ -2,21 +2,22 @@ import scipy.io
 import numpy as np
 import os
 
-data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/180-6-180/'
-sample_id = 'mouse_vas_deferens1'  
-# sample_id = 'point_phantom'
+# data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/180-6-180/'
+# sample_id = 'mouse_vas_deferens1'  
+data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/90-6-90/'
+sample_id = 'phantom'
 filename = data_directory + sample_id + '_data.mat'
 data = scipy.io.loadmat(filename)
 
 # FOR SAMPLES
-center_angle_i = 15 # Arbitrarily define one angle as central within the original range (Here, 90 degrees from that at 0)
-max_angles = 90, 60, 30, 18, 90, 90
-intervals = 6, 6, 6, 6, 18, 30
-
-# FOR PHANTOM
-# center_angle_i = 90
+# center_angle_i = 15 # Arbitrarily define one angle as central within the original range (Here, 90 degrees from that at 0)
 # max_angles = 90, 60, 30, 18, 90, 90
 # intervals = 6, 6, 6, 6, 18, 30
+
+# FOR PHANTOM
+center_angle_i = 15
+max_angles = 60, 30, 18, 90, 90
+intervals = 6, 6, 6, 18, 30
 
 subsampledData = data.copy()
 Bscans = data['Bscans']
@@ -48,7 +49,7 @@ for i in range(len(max_angles)):
 
     anglename = str(max_angle) + '-' + str(interval) + '-' + str(max_angle)
     data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/' + anglename + '/'
-    os.mkdir(data_directory)
+    # os.mkdir(data_directory)
     filename = data_directory + sample_id + '_data.mat'
     scipy.io.savemat(filename, subsampledData)
 

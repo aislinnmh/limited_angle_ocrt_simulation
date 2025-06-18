@@ -27,7 +27,7 @@ def createPointScatterers(pointsOCT,n,d,R,xdim,zdim,umpp_x,umpp_z):
 
     if n <= 10:
 
-        maxDist = zdim/2 * 0.8 # don't want it at edge
+        maxDist = xdim/2 * 0.8 # don't want it at edge
         eligibleDists = []
         for i in range(1,n):
             eligibleDists.append(maxDist/i)
@@ -86,7 +86,7 @@ def createPointScatterers(pointsOCT,n,d,R,xdim,zdim,umpp_x,umpp_z):
                 x = i - cenx
 
                 d = np.sqrt(x**2 + z**2)
-                if d > (0.8*zdim/2):
+                if d > (0.8*xdim/2):
                     eligibleMask[i,j] = 0
 
         for i in range(n):

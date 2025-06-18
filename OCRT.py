@@ -25,6 +25,8 @@ class OCRT2D:
         self.depth = 2.219226700101120  # maximum imaging depth in air in mm
         self.n_back = 1.342  # immersion index
         self.wall_thickness = None  # used in parametric optimization
+        self.tube_present = True
+        self.knownRI = False
         self.ths = None  # angles in degrees
         self.step = None  # rk4 step size
         self.numz = None  # number of rk4 steps to take
@@ -333,11 +335,18 @@ class OCRT2D:
                                                    name='general_parameterization')
             else:
                 raise Exception('A_nonparametric must be a number or an array matching the size of the index map')
-            wall_thickness_mm = (self.tube_diameter - 736.5 * self.depth / self.Ascan_numpix) / 2
-            self.wall_thickness = wall_thickness_mm * self.n_back / self.depth
+            if self.tube_present:
+                wall_thickness_mm = (self.tube_diameter - 736.5 * self.depth / self.Ascan_numpix) / 2
+                self.wall_thickness = wall_thickness_mm * self.n_back / self.depth
+            else:
+                self.wall_thickness = 0
+                self.inner_index = tf.cast(0, tf.float32)
+                self.outer_index = tf.cast(0, tf.float32)
             self.A_parametric = tf.Variable([self.inner_index, self.outer_index], name='geometric_parameterization')
-            self.A = tf.add(self.A_nonparametric, self.get_parametric_indexdist(self.A_parametric),
-                            name='total_parameterization')
+            self.A = tf.add(self.A_nonparametric, self.get_parametric_indexdist(self.A_parametric), name='total_parameterization')
+
+
+            
 
         with tf.name_scope('coordinate_based_parameters'):
             self.xz0 = tf.Variable(self.xz0, dtype=tf.float32, name='rotation_center')
@@ -462,7 +471,8 @@ class OCRT2D:
                 tube_radius_change_reg = tf.reduce_sum(diffx ** 2 + diffz ** 2)
                 tube_radius_change_reg = tf.multiply(tube_radius_change_reg, self.tube_radius_change_reg_coeff,
                                                      name='tube_expansion_reg')
-                self.loss_terms.append(tube_radius_change_reg)
+                if self.knownRI == False:
+                    self.loss_terms.append(tube_radius_change_reg)
 
             # regularization for nonparametric optimization:
             support_reg = tf.multiply(4000., self.L2_mask(self.external_TV_mask.flatten()), name='support_reg')
@@ -495,7 +505,8 @@ class OCRT2D:
                 train_op_ = train_op_nonparametric
 
         self.train_ops = list()  # to be grouped together
-        self.train_ops.append(train_op_)
+        if self.knownRI == False:
+            self.train_ops.append(train_op_)
 
         # train ops for other optimizable parameters other than index:
         with tf.name_scope('non_RI_train_ops'):
@@ -597,6 +608,10 @@ class OCRT2D:
             tf.clip_by_value((rc - r_inner) / transition_thickness, -15, 15)))
         ring_outer = h_outer / (1 + tf.exp(
             tf.clip_by_value((rc - r_outer) / transition_thickness, -15, 15)))
+        
+        if self.tube_present == False:
+            ring_inner = ring_inner*0
+            ring_outer = ring_outer*0
 
         return ring_inner + ring_outer
 

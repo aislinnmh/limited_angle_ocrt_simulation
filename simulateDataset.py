@@ -18,8 +18,8 @@ saveFolder = 'Simulated Dataset'
 oct = angularOCTSim2D(sampleID, saveFolder)
 
 # Angular Sampling Parameters (degrees)
-minAngle = -18
-maxAngle = 18
+minAngle = -90
+maxAngle = 90
 interval = 6
 angles = np.arange(minAngle,maxAngle+interval,interval)
 print(angles)
@@ -32,7 +32,7 @@ depth = 2.22 # mm
 lat_FOV = 1.5 # mm
 ax_res = 1.2 # um
 lat_res  = 8.5 # um
-mu_t = depth/2 # mm^-1 # Arbitrary but realistic - no falloff info given
+mu_t = depth/1.5 # mm^-1 # Arbitrary but realistic - no falloff info given
 
 oct.setParameters(angles, Ascans, zpixels, depth, lat_FOV, ax_res, lat_res, mu_t)
 oct.rotate()
@@ -55,12 +55,19 @@ plt.show()
 print('plotted')
 
 # Save
-anglename = str(maxAngle) + '-' + str(interval) + '-' + str(maxAngle)
+anglename = str(maxAngle) + '-' + str(interval) + '-' + str(maxAngle) + '/'
 data_directory = 'c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/'   
 # data_directory = 'c:/Users/William Bundrant/OneDrive/Documents/Aislinn/GitHub/Datasets/'
-filename = data_directory + sampleID + '_data.mat'
+filename = data_directory + anglename + sampleID + '_data.mat'
 
 data = {}
+result = np.transpose(result,(0,2,1))
+# LOG, scale to similar rnage as sample
+result = result/100
+result[result<=0.5] = 0.5
+result = np.log(result)
+result = result/2
+
 data['Bscans'] = result
 data['basename'] = 'phantom'
 data['Bscan_dims'] = [zpixels,Ascans]
@@ -69,11 +76,13 @@ xzcoords[:,:,0] = np.tile(np.linspace(0,1,Ascans),(len(angles),1))
 data['xzcoords'] = xzcoords
 data['tweaks'] = np.zeros((len(angles),2))
 data['window'] = np.ones((128,128)).astype(np.int64)
-data['L'] = 1
-data['radii'] = 0
-data['mindists'] = np.zeros((128,128))
-# Just taken from a sample arbitrarily
-data['center'] = [0.4985, 0.3402] 
-data['weights'] = np.ones((zpixels,Ascans)) * 2.364e-7
+data['L'] = 0.664
+data['center'] = [0.5,0.5] 
+data['radii'] = 0 # no tube
+
+# Just taken from a sample in order to work
+sample_data = scipy.io.loadmat('C:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/90-6-90/mouse_vas_deferens1_data.mat')
+data['mindists'] = sample_data['mindists'] # kernel
+data['weights'] = np.ones((1,zpixels,Ascans)) * 2.918e-7
 
 scipy.io.savemat(filename, data)
