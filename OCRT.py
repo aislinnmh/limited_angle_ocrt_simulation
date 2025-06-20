@@ -160,6 +160,7 @@ class OCRT2D:
         # self.ths = np.arange(0, max_angle, self.angle_step).astype(np.float32)
         self.angle_step = angle_step
         self.ths = np.arange(-1*max_angle, max_angle+1, self.angle_step).astype(np.float32)
+        # self.ths = np.arange(-1*max_angle, max_angle, self.angle_step).astype(np.float32) # for original data
 
         self.numgauss_s = inds_nonzero_.shape[0]
         surround_dists_ = mindists_ * inds_nonzero_
@@ -349,9 +350,14 @@ class OCRT2D:
             
 
         with tf.name_scope('coordinate_based_parameters'):
-            self.xz0 = tf.Variable(self.xz0, dtype=tf.float32, name='rotation_center')
-            self.xz_delta = tf.Variable(self.xz_delta_init, dtype=tf.float32, name='Bscan_spatial_offsets')
-            self.y_delta = tf.Variable(self.y_delta, dtype=tf.float32, name='Bscan_out_of_plane_offsets')
+            if self.knownRI == False:
+                self.xz0 = tf.Variable(self.xz0, dtype=tf.float32, name='rotation_center')
+                self.xz_delta = tf.Variable(self.xz_delta_init, dtype=tf.float32, name='Bscan_spatial_offsets')
+                self.y_delta = tf.Variable(self.y_delta, dtype=tf.float32, name='Bscan_out_of_plane_offsets')
+            else: # simulated dataset
+                self.xz0 = tf.constant(self.xz0, dtype=tf.float32, name='rotation_center')
+                self.xz_delta = tf.constant(self.xz_delta_init, dtype=tf.float32, name='Bscan_spatial_offsets')
+                self.y_delta = tf.constant(self.y_delta, dtype=tf.float32, name='Bscan_out_of_plane_offsets')
 
         with tf.name_scope('PSF_parameters'):
             self.sigx = tf.Variable(self.sigx, dtype=tf.float32, name='sigx')

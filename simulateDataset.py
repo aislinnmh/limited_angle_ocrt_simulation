@@ -76,7 +76,7 @@ xzcoords[:,:,0] = np.tile(np.linspace(0,1,Ascans),(len(angles),1))
 data['xzcoords'] = xzcoords
 data['tweaks'] = np.zeros((len(angles),2))
 data['window'] = np.ones((128,128)).astype(np.int64)
-data['L'] = 0.664
+data['L'] = 0.6757 # Lat FOV over ax FOV
 data['center'] = [0.5,0.5] 
 data['radii'] = 0 # no tube
 
