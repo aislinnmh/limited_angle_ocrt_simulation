@@ -1,10 +1,11 @@
 max_angles = [90,60, 30, 18, 90, 90];
 intervals = [6,6, 6, 6, 18, 30];
 
-sample_id = 'mouse_vas_deferens1';
-
+% sample_id = 'mouse_vas_deferens1';
+sample_id = 'phantom';
 
 %% Full result
+if strcmp(sample_id,'phantom')==0
 
 save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/saved_models_and_variables/']
 
@@ -36,6 +37,7 @@ colormap(flipud(gray))
 title(['0\circ'],'fontsize',16)
 
 saveas(f,[save_directory sample_id '_ROI.png'])
+end
 %%
 for i = 1:length(max_angles)
 
@@ -51,7 +53,9 @@ result = load([save_directory sample_id '_result.mat']);
 bscan = result.recon;
 
 bscan = rescale(bscan);
+if (i>1 && strcmp(sample_id,'phantom')) ||  strcmp(sample_id,'phantom')==0
 bscan = imhistmatch(bscan,ref);
+end
 
 if i==1
     f = figure(3);
@@ -77,6 +81,11 @@ colormap(flipud(gray))
 title([num2str(max_angle) '\circ to -' num2str(max_angle) '\circ in ' num2str(interval) '\circ intervals'],'fontsize',16)
 saveas(f,[save_directory sample_id '_ROI.png'])
 [save_directory sample_id '_ROI.png']
+
+if i == 1 && strcmp(sample_id,'phantom')
+    ref = bscan;
+end
+
 end
 
 

@@ -1,38 +1,40 @@
 max_angles = [90,60, 30, 18, 90, 90];
 intervals = [6,6, 6, 6, 18, 30];
 
-sample_id = 'mouse_vas_deferens1';
+% sample_id = 'mouse_vas_deferens1';
+sample_id = 'phantom';
 %% Full result
-
-save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/saved_models_and_variables/'];
-
-result = load([save_directory sample_id '_result.mat']);
-bscan = imrotate(result.recon,-90);
-RI = imrotate(result.RI,-90);
-
-f = figure(1);
-bscan = rescale(bscan);
-% lowhigh = stretchlim(bscan,[0.001 0.999]);
-% bscan = imadjust(bscan,lowhigh,[0 1]);
-imshow(bscan)
-colormap(flipud(gray))
-% [low high] = stretchlim(bscan,[0.23 0.998]);
-
-
-
-title([num2str(max_angle) '\circ to -' num2str(max_angle) '\circ in ' num2str(interval) '\circ intervals'],'fontsize',16)
-saveas(f,[save_directory sample_id '_result.png'])
-
-f = figure(2);
-low = min(RI,[],'all');
-high = max(RI,[],'all');
-imshow(RI,[low high]);
-colormap(jet)
-colorbar
-title([num2str(max_angle) '\circ to -' num2str(max_angle) '\circ in ' num2str(interval) '\circ intervals'],'fontsize',16)
-saveas(f,[save_directory sample_id '_resultRI.png'])
-
-ref = bscan;
+if strcmp(sample_id,'phantom')==0
+    save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/saved_models_and_variables/'];
+    
+    result = load([save_directory sample_id '_result.mat']);
+    bscan = imrotate(result.recon,-90);
+    RI = imrotate(result.RI,-90);
+    
+    f = figure(1);
+    bscan = rescale(bscan);
+    % lowhigh = stretchlim(bscan,[0.001 0.999]);
+    % bscan = imadjust(bscan,lowhigh,[0 1]);
+    imshow(bscan)
+    colormap(flipud(gray))
+    % [low high] = stretchlim(bscan,[0.23 0.998]);
+    
+    
+    
+    title([num2str(max_angle) '\circ to -' num2str(max_angle) '\circ in ' num2str(interval) '\circ intervals'],'fontsize',16)
+    saveas(f,[save_directory sample_id '_result.png'])
+    
+    f = figure(2);
+    low = min(RI,[],'all');
+    high = max(RI,[],'all');
+    imshow(RI,[low high]);
+    colormap(jet)
+    colorbar
+    title([num2str(max_angle) '\circ to -' num2str(max_angle) '\circ in ' num2str(interval) '\circ intervals'],'fontsize',16)
+    saveas(f,[save_directory sample_id '_resultRI.png'])
+    
+    ref = bscan;
+end
 %% Limited Angles
 for i = 1:length(max_angles)
     max_angle = max_angles(i);
@@ -48,7 +50,9 @@ bscan = result.recon;
 RI = result.RI;
 
 bscan = rescale(bscan);
+if (i>1 && strcmp(sample_id,'phantom')) ||  strcmp(sample_id,'phantom')==0
 bscan = imhistmatch(bscan,ref);
+end
 
 f = figure(1);
 imshow(bscan)
@@ -68,6 +72,11 @@ colormap(jet)
 colorbar
 title([num2str(max_angle) '\circ to -' num2str(max_angle) '\circ in ' num2str(interval) '\circ intervals'],'fontsize',16)
 saveas(f,[save_directory sample_id '_resultRI.png'])
+
+if i == 1 && strcmp(sample_id,'phantom')
+    ref = bscan;
+end
+
 end
 
 
