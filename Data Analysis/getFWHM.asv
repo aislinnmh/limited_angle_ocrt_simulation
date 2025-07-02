@@ -93,7 +93,7 @@
 % end
 
 
-function [fwhm_x,fwhm_z,psf_x,psf_z] = getFWHM(bscan,lat_FOV,ax_FOV)
+function [fwhm_x,fwhm_z,psf_x,psf_z] = getFWHM(bscan,lat_FOV,ax_FOV,original)
 
 [zpixels Ascans] = size(bscan);
 umpp_x = lat_FOV/Ascans*1000;
@@ -101,8 +101,9 @@ umpp_z = ax_FOV/zpixels*1000;
 
 
 % average multiple next
+
 bscan = rescale(bscan);
-[j,i] = find(bscan>0.6); % row, col
+[j,i] = find(bscan>0.8) % row, col
 length(i)
 
 % map = zeros(zpixels,Ascans);
@@ -129,34 +130,54 @@ for k = 1:length(zbeadi)
     centered_stack = [centered_stack centered];
 end
 combinedPSF = mean(centered_stack,2);
-psf = combinedPSF(center-15:center+15);
+w = 10;
+psf = combinedPSF(center-w:center+w);
+psf = psf - min(psf);
 figure(1)
-plot(psf,'.k')
 % Fit to gaussian
-f = fit(1:length(psf),psf,'gauss1')
+f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.2))
+if original == 1
+    f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.2) + (psf>0.7))
+end
+hold on
+plot(psf,'.k')
+plot(f)
+hold off
+sigma = f.c1;
+fwhm_x = sigma * 2.35482 * umpp_x
 
 
-% 
-% % FWHM Axial
-% xbeadj = unique(j);
-% % create an array with all detected beads centered
-% center = zpixels/2+1;
-% centered_stack = [];
-% for k = 1:length(xbeadj)
-%     xj = xbeadj(k);
-%     line = squeeze(bscan(xj,:)).';
-% 
-%     maximum = max(line);
-%     beadi = find(line==maximum);
-%     beadi = beadi(1); % only one bead per line if encountered
-% 
-%     diff = center-beadi;
-%     centered = circshift(line,diff);
-%     centered_stack = [centered_stack centered];
-% end
-% combinedPSF = mean(centered_stack,2);
-% figure(2)
-% plot(combinedPSF(center-20:center+20))
 
+% FWHM Axial
+xbeadj = unique(j);
+% create an array with all detected beads centered
+center = zpixels/2+1;
+centered_stack = [];
+for k = 1:length(xbeadj)
+    xj = xbeadj(k);
+    line = squeeze(bscan(xj,:)).';
+
+    maximum = max(line);
+    beadi = find(line==maximum);
+    beadi = beadi(1); % only one bead per line if encountered
+
+    diff = center-beadi;
+    centered = circshift(line,diff);
+    centered_stack = [centered_stack centered];
+end
+combinedPSF = mean(centered_stack,2);
+w = 10;
+psf = combinedPSF(center-w:center+w);
+psf = psf - min(psf);
+figure(2)
+% Fit to gaussian
+f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.2) + (psf>0.9))
+hold on
+plot(psf,'.k')
+plot(f)
+hold off
+sigma = f.c1;
+fwhm_z = sigma * 2.35482 * umpp_z
+psf_z = psf;
 
 end

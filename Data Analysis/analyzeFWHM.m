@@ -1,22 +1,155 @@
 
-max_angle = 0;
-interval = 6;
+% max_angles = [90, 60, 30, 18, 90, 90, 0];
+% intervals = [6, 6, 6, 6, 18, 30, 0];
+
+max_angles = 18;
+intervals = 6;
+
+fwhm_x_list = [];
+fwhm_z_list = [];
+
+for anglenum = 1:length(max_angles)
+
+max_angle = max_angles(anglenum);
+interval = intervals(anglenum);
+
 anglename = [num2str(max_angle) '-' num2str(interval) '-' num2str(max_angle)];
+sample_id = 'phantom';
+
 
 if max_angle == 0
-    load_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/18-6-18/']
+    % load_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Datasets/18-6-18/']
+    load_directory = ['C:/Users/bundr/Documents/Research/Robotic OCRT/Limited Angle Project/Data/18-6-18/']
+
     result = load([load_directory sample_id '_data.mat']);
     bscan = squeeze(result.Bscans(4,:,:)).';
     bscan = imresize(bscan,[1024 1024]);
     lat_FOV = 1.5;
     ax_FOV = 2.22;
+    original = 1;
 else
-    save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/saved_models_and_variables/' anglename '/'];
-    sample_id = 'phantom';
+    % save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/saved_models_and_variables/' anglename '/'];
+    save_directory = ['C:/Users/bundr/Documents/Research/Robotic OCRT/Limited Angle Project/Data/' anglename '/'];
     result = load([save_directory sample_id '_result.mat']);
     bscan = result.recon;
-    lat_FOV = 3;
-    ax_FOV;
+    lat_FOV = 1.5*1.5;
+    ax_FOV = 2.22;
+    original = 0;
 end
 
-[fwhm_x,fwhm_z,psf_x,psf_z] = getFWHM(bscan,lat_FOV,ax_FOV);
+[fwhm_x,fwhm_z,psf_x,psf_z] = getFWHM(bscan,lat_FOV,ax_FOV,max_angle,interval);
+
+fwhm_x_list = [fwhm_x_list fwhm_x];
+fwhm_z_list = [fwhm_z_list fwhm_z];
+
+end
+
+%%
+
+fwhmLimitedRange = [];
+fwhmLimitedSampling = [];
+for i = 1:length(max_angles)
+    n = round(max_angles(i)/intervals(i))*2+1;
+    if intervals(i) == 6 || intervals(i) == 0
+        if intervals(i)==0
+            n=1;
+        end
+        data = [max_angles(i) intervals(i) fwhm_x_list(i) fwhm_z_list(i) n];
+        fwhmLimitedRange = [fwhmLimitedRange; data];
+    end
+    if max_angles(i) == 90 
+        data = [max_angles(i) intervals(i) fwhm_x_list(i) fwhm_z_list(i) n];
+        fwhmLimitedSampling = [fwhmLimitedSampling; data];
+    end
+end
+
+%%
+save_prefix = 'C:/Users/bundr/Documents/Research/Robotic OCRT/Limited Angle Project/Results/';
+%%
+f = figure('Position',[100 100 600 400]);
+hold on
+% plot(fwhmLimitedRange(1,1)*2,fwhmLimitedRange(1,3),'kdiamond','markersize',10,'linewidth',2);
+plot(fwhmLimitedRange(:,1)*2,fwhmLimitedRange(:,3),'--','linewidth',2,'color',[0 0.5 0.8]);
+plot(fwhmLimitedRange(:,1)*2,fwhmLimitedRange(:,4),'--','linewidth',2,'color',[0 0.8 1]);
+plot(fwhmLimitedRange(:,1)*2,fwhmLimitedRange(:,3),'.k','linewidth',2,'markersize',20);
+plot(fwhmLimitedRange(:,1)*2,fwhmLimitedRange(:,4),'.k','linewidth',2,'markersize',20);
+legend('Lateral','Axial','fontsize',14,'location','northeast')
+hold off
+ax = gca;
+ax.FontSize = 18;
+ylabel('FWHM of PSF (\mum)','fontsize',20,'fontweight','bold')
+xlabel('Total Angular Sampling Range','fontsize',20,'fontweight','bold')
+xticks([0 60 120 180 360])
+title({'Effect of angular range on resolution','given constant 6\circ interval'},'fontsize',16)
+
+save_directory = [save_prefix sample_id];
+saveas(f,[save_directory '_limited_range_psf_plot.png'])
+
+%%
+
+f = figure('Position',[100 100 600 400]);
+hold on
+plot(fwhmLimitedSampling(:,2),fwhmLimitedSampling(:,3),'--','linewidth',2,'color',[0.8 0.4 0.2]);
+plot(fwhmLimitedSampling(:,2),fwhmLimitedSampling(:,4),'--','linewidth',2,'color',[1 0.8 0.6]);
+plot(fwhmLimitedSampling(:,2),fwhmLimitedSampling(:,3),'.k','linewidth',2,'markersize',20);
+plot(fwhmLimitedSampling(:,2),fwhmLimitedSampling(:,4),'.k','linewidth',2,'markersize',20);
+legend('Lateral','Axial','fontsize',14,'location','northeast')
+
+hold off
+ax = gca;
+ax.FontSize = 18;
+set(gca,'xdir','reverse')
+
+ylabel('FWHM of PSF (\mum)','fontsize',20,'fontweight','bold')
+xlabel('Angular Sampling Interval','fontsize',20,'fontweight','bold')
+xticks([6:6:30])
+xlim([0 36])
+ylim([0 30])
+title({'Effect of angular sampling interval on resolution','given constant 180\circ range'},'fontsize',16)
+
+save_directory = [save_prefix sample_id];
+saveas(f,[save_directory '_limited_sampling_psf_plot.png'])
+
+
+%%
+
+f = figure('Position',[100 100 650 450]);
+hold on
+plot(fwhmLimitedRange(:,5),fwhmLimitedRange(:,3),'--','linewidth',2,'color',[0 0.5 0.8]);
+plot(fwhmLimitedSampling(:,5),fwhmLimitedSampling(:,3),'--','linewidth',2,'color',[0.8 0.4 0.2]);
+plot(fwhmLimitedRange(:,5),fwhmLimitedRange(:,4),'--','linewidth',2,'color',[0 0.8 1]);
+plot(fwhmLimitedSampling(:,5),fwhmLimitedSampling(:,4),'--','linewidth',2,'color',[1 0.8 0.6]);
+plot(fwhmLimitedRange(1,5),fwhmLimitedRange(1,3),'k^','linewidth',2,'markersize',10);
+% plot([31 31],[0 80],'k:','linewidth',1.5)
+plot(fwhmLimitedRange(2:end,5),fwhmLimitedRange(2:end,3),'.k','linewidth',2,'markersize',20);
+plot(fwhmLimitedSampling(2:end,5),fwhmLimitedSampling(2:end,3),'.k','linewidth',2,'markersize',20);
+plot(fwhmLimitedRange(2:end,5),fwhmLimitedRange(2:end,4),'.k','linewidth',2,'markersize',20);
+plot(fwhmLimitedSampling(2:end,5),fwhmLimitedSampling(2:end,4),'.k','linewidth',2,'markersize',20);
+
+legend('  Lateral       Increasing Angular Range','  Lateral       Decreasing Angular Interval','  Axial          Increasing Angular Range','  Axial          Decreasing Angular Interval','  Isotropic    180\circ Range, 6\circ Interval','fontsize',12,'location','northeast')
+
+
+% legend('Increasing Angular Range, Lateral','Increasing Angular Range, Axial','Decreasing Angular Interval, Lateral','Decreasing Angular Interval, Axial','180\circ Range, 6\circ Interval','fontsize',12,'location','northeast')
+
+hold off
+ax = gca;
+ax.FontSize = 18;
+ylabel('FWHM of PSF (\mum)','fontsize',20,'fontweight','bold')
+xlabel('Total # of Angular Samples','fontsize',20,'fontweight','bold')
+xlim([0 33])
+ylim([0 30])
+title({'Effect of total angular samples on resolution'},'fontsize',14)
+
+save_directory = [save_prefix sample_id];
+saveas(f,[save_directory '_fwhm_combined_plot.png'])
+%%
+% Analyze
+max_angle = fwhmLimitedRange(:,1).';
+range = fwhmLimitedRange(:,1).'*2;
+fwhm = fwhmLimitedRange(:,3).';
+factor = fwhm/fwhm(1);
+cos1 = cosd(max_angle);
+cos2 = cosd(range);
+sin1 = sind(max_angle);
+sin2 = sind(range);
+
