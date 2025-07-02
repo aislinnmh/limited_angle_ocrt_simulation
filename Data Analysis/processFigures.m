@@ -12,8 +12,12 @@ phantom = imresize(phantom,scale);
 % phantom = rescale(phantom);
 
 f = figure('Position',[50 50 800 800]);
+
+phantom = imrotate(phantom,-90);
+
 % imshow(phantom);
-imagesc(0:0.00025/scale:2.22,0:0.00025/scale:1.5,phantom)
+% imagesc(0:0.00025/scale:2.22,0:0.00025/scale:1.5,phantom)
+imagesc(0:0.00025/scale:1.5,0:0.00025/scale:2.22,phantom)
 axis image
 colormap(flipud(gray))
 % colorbar
@@ -44,8 +48,13 @@ bscan3 = imresize(bscan3,scale);
 
 f = figure('Position',[50 50 1800 1000]);
 
+bscan1 = imrotate(bscan1,90);
+bscan2 = imrotate(bscan2,90);
+bscan3 = imrotate(bscan3,90);
+
+
 % subplot(1,3,1)
-imagesc(0:z_mmpp/1000*scale:2.22,0:x_mmpp/1000*scale:1.5,bscan1.')
+imagesc(0:z_mmpp/1000*scale:1.5,0:x_mmpp/1000*scale:2.22,bscan1.')
 axis image
 colormap(flipud(gray))
 % colorbar
@@ -55,7 +64,7 @@ saveas(f,[load_directory 'phantom_minus90.png'])
 f = figure('Position',[50 50 1800 1000]);
 
 % subplot(1,3,2)
-imagesc(0:z_mmpp/1000*scale:2.22,0:x_mmpp/1000*scale:1.5,bscan2.')
+imagesc(0:z_mmpp/1000*scale:1.5,0:x_mmpp/1000*scale:2.22,bscan2.')
 axis image
 colormap(flipud(gray))
 % colorbar
@@ -65,7 +74,7 @@ saveas(f,[load_directory 'phantom_0.png'])
 f = figure('Position',[50 50 1800 1000]);
 
 % subplot(1,3,3)
-imagesc(0:z_mmpp/1000*scale:2.22,0:x_mmpp/1000*scale:1.5,bscan3.')
+imagesc(0:z_mmpp/1000*scale:1.5,0:x_mmpp/1000*scale:2.22,bscan3.')
 axis image
 colormap(flipud(gray))
 % colorbar

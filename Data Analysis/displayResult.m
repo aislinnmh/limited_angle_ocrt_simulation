@@ -11,6 +11,10 @@ if strcmp(sample_id,'phantom')==0
     bscan = imrotate(result.recon,-90);
     RI = imrotate(result.RI,-90);
     
+    % x left-right, z up-down
+    RI = imrotate(RI,-90);
+    bscan = imrotate(bscan,-90);
+    
     f = figure(1);
     bscan = rescale(bscan);
     % lowhigh = stretchlim(bscan,[0.001 0.999]);
@@ -20,7 +24,8 @@ if strcmp(sample_id,'phantom')==0
     % [low high] = stretchlim(bscan,[0.23 0.998]);
     
     
-    
+    max_angle = 180;
+    interval = 6;
     title([num2str(max_angle) '\circ to -' num2str(max_angle) '\circ in ' num2str(interval) '\circ intervals'],'fontsize',16)
     saveas(f,[save_directory sample_id '_result.png'])
     
@@ -48,6 +53,10 @@ save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_l
 result = load([save_directory sample_id '_result.mat']);
 bscan = result.recon;
 RI = result.RI;
+
+   % x left-right, z up-down
+    RI = imrotate(RI,-90);
+    bscan = imrotate(bscan,-90);
 
 bscan = rescale(bscan);
 if (i>1 && strcmp(sample_id,'phantom')) ||  strcmp(sample_id,'phantom')==0
@@ -88,13 +97,20 @@ save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_l
 
 result = load([load_directory sample_id '_data.mat']);
 bscan = squeeze(result.Bscans(4,:,:));
-[m n ] = size(bscan)
+[m n] = size(bscan)
 
 bscan = rescale(bscan);
 bscan = imhistmatch(bscan,ref);
 
+   % x left-right, z up-down
+    % RI = imrotate(RI,-90);
+    bscan = imrotate(bscan,90);
+
 f = figure(1);
-imagesc(linspace(0,2.2,m),linspace(0,1.5,n),bscan.')
+imagesc(linspace(0,1.5,n),linspace(0,2.22,m),bscan.')
+% imagesc(linspace(0,2.2,m),linspace(0,1.5,n),bscan.')
+
+axis image
 colormap(flipud(gray))
 % [low high] = stretchlim(bscan,[0.23 0.998]);
 

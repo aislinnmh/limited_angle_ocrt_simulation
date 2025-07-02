@@ -16,6 +16,9 @@ bscan = rescale(bscan);
 % lowhigh = stretchlim(bscan,[0.001 0.999]);
 % bscan = imadjust(bscan,lowhigh,[0 1]);
 
+% x left-right, z up-down
+bscan = imrotate(bscan,-90);
+
 f = figure(1);
 imshow(bscan)
 colormap(flipud(gray))
@@ -37,6 +40,7 @@ colormap(flipud(gray))
 title(['0\circ'],'fontsize',16)
 
 saveas(f,[save_directory sample_id '_ROI.png'])
+ref = bscan;
 end
 %%
 for i = 1:length(max_angles)
@@ -56,6 +60,9 @@ bscan = rescale(bscan);
 if (i>1 && strcmp(sample_id,'phantom')) ||  strcmp(sample_id,'phantom')==0
 bscan = imhistmatch(bscan,ref);
 end
+
+% x left-right, z up-down
+bscan = imrotate(bscan,-90);
 
 if i==1
     f = figure(3);
@@ -102,6 +109,9 @@ bscan = imresize(bscan,[1024 1024]);
 
 bscan = rescale(bscan).';
 bscan = imhistmatch(bscan,ref);
+
+% x left-right, z up-down
+bscan = imrotate(bscan,-90);
 
 f = figure(4);
 imshow(bscan)

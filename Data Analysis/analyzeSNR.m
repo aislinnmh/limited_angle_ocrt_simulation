@@ -17,6 +17,8 @@ result = load([save_directory sample_id '_result.mat']);
 bscan = imrotate(result.recon,-90);
 
 bscan = rescale(bscan);
+% x left-right, z up-down
+bscan = imrotate(bscan,-90);
 
 f = figure(1);
 imshow(bscan)
@@ -105,7 +107,10 @@ bscan = result.recon;
 bscan = rescale(bscan);
 bscan = imhistmatch(bscan,ref);
 
-if i==1
+% x left-right, z up-down
+bscan = imrotate(bscan,-90);
+
+% if i==1
     f = figure(1);
     imshow(bscan)
     colormap(flipud(gray))
@@ -118,11 +123,11 @@ if i==1
      % height = roi.Position(4)
      
      xmin = xmin1-60;
-     ymin = ymin1+60;
+     ymin = ymin1-60;
 
      ymax = ymin + height1;
      xmax = xmin + width1;
-end 
+% end 
 
 f = figure(1);
  btemp = bscan;
@@ -135,7 +140,7 @@ f = figure(1);
 
 
  xmin = xmin2-60;
-     ymin = ymin2+60;
+     ymin = ymin2-60;
 
      ymax = ymin + height2;
      xmax = xmin + width2;
@@ -174,6 +179,9 @@ bscan = imresize(bscan,[1024 1024]);
 
 bscan = rescale(bscan).';
 bscan = imhistmatch(bscan,ref);
+
+% x left-right, z up-down
+bscan = imrotate(bscan,-90);
 
 f = figure(1);
     imshow(bscan)
@@ -245,7 +253,7 @@ for i = 1:length(snr_data.snr)
         data = [snr_data.max_angles(i) snr_data.intervals(i) snr_data.snr(i) snr_data.signal(i) snr_data.noise(i) n];
         snrLimitedRange = [snrLimitedRange; data];
     end
-    if snr_data.max_angles(i) == 90
+    if snr_data.max_angles(i) == 90 || snr_data.max_angles(i) == 180
         n = round(snr_data.max_angles(i)/snr_data.intervals(i))*2+1;
         data = [snr_data.max_angles(i) snr_data.intervals(i) snr_data.snr(i) snr_data.signal(i) snr_data.noise(i) n];
         snrLimitedSampling = [snrLimitedSampling; data];
@@ -254,10 +262,10 @@ end
 %%
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(snrLimitedRange(1,1)*2,snrLimitedRange(1,3),'*k','markersize',10,'linewidth',2);
+% plot(snrLimitedRange(1,1)*2,snrLimitedRange(1,3),'kdiamond','markersize',10,'linewidth',2);
 plot(snrLimitedRange(:,1)*2,snrLimitedRange(:,3),'--','linewidth',2,'color',[0 0.5 0.8]);
 plot(snrLimitedRange(:,1)*2,snrLimitedRange(:,3),'.k','linewidth',2,'markersize',20);
-legend(['Fully Sampled OCRT'],'fontsize',14,'location','southeast')
+% legend(['Fully Sampled OCRT'],'fontsize',14,'location','southeast')
 hold off
 ax = gca;
 ax.FontSize = 18;
@@ -272,8 +280,8 @@ saveas(f,[save_directory '_limited_range_plot.png'])
 
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(snrLimitedSampling(:,2),snrLimitedSampling(:,3),'--','linewidth',2,'color',[0.8 0.4 0.2]);
-plot(snrLimitedSampling(:,2),snrLimitedSampling(:,3),'.k','linewidth',2,'markersize',20);
+plot(snrLimitedSampling(2:end,2),snrLimitedSampling(2:end,3),'--','linewidth',2,'color',[0.8 0.4 0.2]);
+plot(snrLimitedSampling(2:end,2),snrLimitedSampling(2:end,3),'.k','linewidth',2,'markersize',20);
 hold off
 ax = gca;
 ax.FontSize = 18;
@@ -292,13 +300,14 @@ saveas(f,[save_directory '_limited_sampling_plot.png'])
 
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(snrLimitedRange(2:end,6),snrLimitedRange(2:end,3),'--','linewidth',2,'color',[0 0.5 0.8]);
+plot(snrLimitedRange(:,6),snrLimitedRange(:,3),'-.','linewidth',2,'color',[0 0.5 0.8]);
 plot(snrLimitedSampling(:,6),snrLimitedSampling(:,3),'--','linewidth',2,'color',[0.8 0.4 0.2]);
-plot([31 31],[0 80],'k:','linewidth',1.5)
-plot(snrLimitedRange(1,6),snrLimitedRange(1,3),'*k','markersize',10,'linewidth',2)
-plot(snrLimitedRange(2:end,6),snrLimitedRange(2:end,3),'.k','linewidth',2,'markersize',20);
-plot(snrLimitedSampling(:,6),snrLimitedSampling(:,3),'.k','linewidth',2,'markersize',20);
-legend('Increasing Angular Range','Decreasing Angular Interval','180\circ Range, 6\circ Interval Sampling','Fully Sampled OCRT','fontsize',12,'location','southeast')
+plot(snrLimitedRange(2,6),snrLimitedRange(2,3),'k^','linewidth',2,'markersize',10);
+% plot([31 31],[0 80],'k:','linewidth',1.5)
+plot(snrLimitedRange(1,6),snrLimitedRange(1,3),'diamondk','markersize',10,'linewidth',2)
+plot(snrLimitedRange(3:end,6),snrLimitedRange(3:end,3),'.k','linewidth',2,'markersize',20);
+plot(snrLimitedSampling(3:end,6),snrLimitedSampling(3:end,3),'.k','linewidth',2,'markersize',20);
+legend('Increasing Angular Range','Decreasing Angular Interval','180\circ Range, 6\circ Interval Sampling','360\circ Range, 6\circ Interval Sampling','fontsize',12,'location','southeast')
 
 hold off
 ax = gca;
@@ -306,7 +315,7 @@ ax.FontSize = 18;
 ylabel('Signal to Noise Ratio','fontsize',20,'fontweight','bold')
 xlabel('Total # of Angular Samples','fontsize',20,'fontweight','bold')
 xlim([0 68])
-ylim([0 60])
+ylim([20 70])
 title({'Effect of total angular samples on SNR'},'fontsize',14)
 
 save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Results/' sample_id];
@@ -315,10 +324,10 @@ saveas(f,[save_directory '_snr_combined_plot.png'])
 %%
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(snrLimitedRange(1,1)*2,snrLimitedRange(1,5),'*k','markersize',10,'linewidth',2);
+% plot(snrLimitedRange(1,1)*2,snrLimitedRange(1,5),'*k','markersize',10,'linewidth',2);
 plot(snrLimitedRange(:,1)*2,snrLimitedRange(:,5),'--','linewidth',2,'color',[0 0.5 0.8]);
 plot(snrLimitedRange(:,1)*2,snrLimitedRange(:,5),'.k','linewidth',2,'markersize',20);
-legend(['Fully Sampled OCRT'],'fontsize',14,'location','northeast')
+% legend(['Fully Sampled OCRT'],'fontsize',14,'location','northeast')
 hold off
 ax = gca;
 ax.FontSize = 16;
@@ -333,8 +342,8 @@ saveas(f,[save_directory '_limited_range_plot_noise.png'])
 
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(snrLimitedSampling(:,2),snrLimitedSampling(:,5),'--','linewidth',2,'color',[0.8 0.4 0.2]);
-plot(snrLimitedSampling(:,2),snrLimitedSampling(:,5),'.k','linewidth',2,'markersize',20);
+plot(snrLimitedSampling(2:end,2),snrLimitedSampling(2:end,5),'--','linewidth',2,'color',[0.8 0.4 0.2]);
+plot(snrLimitedSampling(2:end,2),snrLimitedSampling(2:end,5),'.k','linewidth',2,'markersize',20);
 hold off
 ax = gca;
 ax.FontSize = 16;
@@ -353,12 +362,13 @@ saveas(f,[save_directory '_limited_sampling_plot_noise.png'])
 
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(snrLimitedRange(2:end,6),snrLimitedRange(2:end,5),'--','linewidth',2,'color',[0 0.5 0.8]);
+plot(snrLimitedRange(:,6),snrLimitedRange(:,5),'-.','linewidth',2,'color',[0 0.5 0.8]);
 plot(snrLimitedSampling(:,6),snrLimitedSampling(:,5),'--','linewidth',2,'color',[0.8 0.4 0.2]);
-plot([31 31],[0 80],'k:','linewidth',1.5)
-plot(snrLimitedRange(1,6),snrLimitedRange(1,5),'*k','markersize',10,'linewidth',2)
-plot(snrLimitedRange(2:end,6),snrLimitedRange(2:end,5),'.k','linewidth',2,'markersize',20);
-plot(snrLimitedSampling(:,6),snrLimitedSampling(:,5),'.k','linewidth',2,'markersize',20);
+% plot([31 31],[0 80],'k:','linewidth',1.5)
+plot(snrLimitedRange(2,6),snrLimitedRange(2,5),'k^','linewidth',2,'markersize',10);
+plot(snrLimitedRange(1,6),snrLimitedRange(1,5),'kdiamond','markersize',10,'linewidth',2)
+plot(snrLimitedRange(3:end,6),snrLimitedRange(3:end,5),'.k','linewidth',2,'markersize',20);
+plot(snrLimitedSampling(3:end,6),snrLimitedSampling(3:end,5),'.k','linewidth',2,'markersize',20);
 plot([31 31],[0 1],'k.-')
 legend('Increasing Angular Range','Decreasing Angular Interval','180\circ Range, 6\circ Interval Sampling','Fully Sampled OCRT','fontsize',12,'location','northeast')
 hold off

@@ -16,10 +16,13 @@ save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_l
 RI = load([save_directory sample_id '_result.mat']).RI;
 RI = imrotate(RI,-90);
 
+    % x left-right, z up-down
+    RI = imrotate(RI,-90);
+
 % crop to focus on sample
-yoff = 42;
-xstart = 90;
-RI = RI(yoff:256-yoff,xstart:end);
+ystart = 88;
+xoff = 44;
+RI = RI(ystart:end, xoff:256-xoff);
 
 f = figure(1);
 imshow(RI,[min(RI,[],'all') max(RI,[],'all')])
@@ -32,9 +35,9 @@ colorbar
 
  roi = drawrectangle;
  xmin = roi.Position(1);
- xmin1=xmin;
+ xmin1=xmin
  ymin = roi.Position(2);
- ymin1=ymin;
+ ymin1=ymin
  width = roi.Position(3);
  height = roi.Position(4);
  width1 = width;
@@ -58,9 +61,9 @@ title('Choose Sample ROI')
 
 roi2 = drawrectangle;
  xmin = roi2.Position(1);
- xmin2 = xmin;
+ xmin2 = xmin
  ymin = roi2.Position(2);
- ymin2 = ymin;
+ ymin2 = ymin
  width = roi2.Position(3);
  height = roi2.Position(4);
   width2 = width;
@@ -75,8 +78,8 @@ roi2 = drawrectangle;
  btemp(ymin-w:ymax+w,xmin-w:xmin+w) = 0;
  btemp(ymin-w:ymax+w,xmax-w:xmax+w) = 0;
 
-
-imshow(btemp)
+f=figure(3);
+imshow(btemp,[min(RI,[],'all') max(RI,[],'all')])
 colormap(jet)
 colorbar
 title(['0\circ'],'fontsize',16)
@@ -104,8 +107,9 @@ result = load([save_directory sample_id '_result.mat']);
 RI = result.RI;
 
 RI = RI;
-RI = RI(1:256-xstart,yoff:256-yoff);
-
+    % x left-right, z up-down
+    RI = imrotate(RI,-90);
+RI = RI(xoff:256-xoff,ystart:end);
     f = figure(1);
     imshow(RI,[min(RI,[],'all') max(RI,[],'all')])
     colormap(jet)
@@ -118,8 +122,8 @@ RI = RI(1:256-xstart,yoff:256-yoff);
      % width = roi.Position(3)
      % height = roi.Position(4)
      
-     xmin = xmin1;
-     ymin = ymin1;
+     xmin = xmin1
+     ymin = ymin1
 
      ymax = ymin + height1;
      xmax = xmin + width1;
@@ -134,8 +138,8 @@ f = figure(1);
  btemp(ymin-w:ymax+w,xmax-w:xmax+w) = 0;
 
 
- xmin = xmin2;
-     ymin = ymin2;
+ xmin = xmin2
+     ymin = ymin2
 
      ymax = ymin + height2;
      xmax = xmin + width2;
@@ -145,7 +149,7 @@ f = figure(1);
  btemp(ymin-w:ymax+w,xmin-w:xmin+w) = 0;
  btemp(ymin-w:ymax+w,xmax-w:xmax+w) = 0;
 
-imshow(btemp)
+imshow(btemp,[min(RI,[],'all') max(RI,[],'all')])
 colormap(jet)
 colorbar
 
@@ -172,7 +176,7 @@ for i = 1:length(RI_data.tube_RI)
         data = [RI_data.max_angles(i) RI_data.intervals(i) RI_data.tube_RI(i) RI_data.sample_RI(i) n];
         RILimitedRange = [RILimitedRange; data];
     end
-    if RI_data.max_angles(i) == 90
+    if RI_data.max_angles(i) == 90 || RI_data.max_angles(i) == 180
         n = round(RI_data.max_angles(i)/RI_data.intervals(i))*2+1;
         data = [RI_data.max_angles(i) RI_data.intervals(i) RI_data.tube_RI(i) RI_data.sample_RI(i) n];
         RILimitedSampling = [RILimitedSampling; data];
@@ -182,11 +186,12 @@ end
 f = figure('Position',[100 100 500 400]);
 gt = RILimitedRange(1,3);
 hold on
-plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.6 0.6 0.6])
-plot(RILimitedRange(1,1)*2,RILimitedRange(1,3),'*k','markersize',10,'linewidth',2);
+plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.3 0.3 0.3])
+% plot(RILimitedRange(1,1)*2,RILimitedRange(1,3),'*k','markersize',10,'linewidth',2);
 plot(RILimitedRange(:,1)*2,RILimitedRange(:,3),'--','linewidth',2,'color',[0 0.5 0.8]);
 plot(RILimitedRange(:,1)*2,RILimitedRange(:,3),'.k','linewidth',2,'markersize',20);
-legend('Ground Truth','Fully Sampled OCRT','fontsize',14,'location','southeast')
+legend('Ground Truth','fontsize',14,'location','southeast')
+% legend('Ground Truth','Fully Sampled OCRT','fontsize',14,'location','southeast')
 hold off
 ax = gca;
 ax.FontSize = 18;
@@ -205,7 +210,7 @@ saveas(f,[save_directory '_limited_range_plot_tube.png'])
 
 f = figure('Position',[100 100 500 400]);
 hold on
-plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.6 0.6 0.6])
+plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.3 0.3 0.3])
 plot(RILimitedSampling(:,2),RILimitedSampling(:,3),'--','linewidth',2,'color',[0.8 0.4 0.2]);
 plot(RILimitedSampling(:,2),RILimitedSampling(:,3),'.k','linewidth',2,'markersize',20);
 legend(['Ground Truth'],'fontsize',14,'location','southeast')
@@ -229,14 +234,15 @@ saveas(f,[save_directory '_limited_sampling_plot_tube.png'])
 
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(RILimitedRange(2:end,5),RILimitedRange(2:end,3),'--','linewidth',2,'color',[0 0.5 0.8]);
+plot(RILimitedRange(:,5),RILimitedRange(:,3),'-.','linewidth',2,'color',[0 0.5 0.8]);
 plot(RILimitedSampling(:,5),RILimitedSampling(:,3),'--','linewidth',2,'color',[0.8 0.4 0.2]);
-plot([31 31],[0 80],'k:','linewidth',1.5)
-plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.6 0.6 0.6])
-plot(RILimitedRange(1,5),RILimitedRange(1,3),'*k','markersize',10,'linewidth',2)
-plot(RILimitedRange(2:end,5),RILimitedRange(2:end,3),'.k','linewidth',2,'markersize',20);
-plot(RILimitedSampling(:,5),RILimitedSampling(:,3),'.k','linewidth',2,'markersize',20);
-legend('Increasing Angular Range','Decreasing Angular Interval','180\circ Range, 6\circ Interval Sampling','Ground Truth','Fully Sampled OCRT','fontsize',12,'location','southeast')
+% plot([31 31],[0 80],'k:','linewidth',1.5)
+plot(RILimitedRange(2,5),RILimitedRange(2,3),'k^','linewidth',2,'markersize',10);
+plot(RILimitedRange(1,5),RILimitedRange(1,3),'kdiamond','markersize',10,'linewidth',2)
+plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.3 0.3 0.3])
+plot(RILimitedRange(3:end,5),RILimitedRange(3:end,3),'.k','linewidth',2,'markersize',20);
+plot(RILimitedSampling(3:end,5),RILimitedSampling(3:end,3),'.k','linewidth',2,'markersize',20);
+legend('Increasing Angular Range','Decreasing Angular Interval','180\circ Range, 6\circ Interval Sampling','Fully Sampled OCRT','Ground Truth','fontsize',12,'location','southeast')
 
 hold off
 ax = gca;
@@ -245,7 +251,7 @@ ylabel('Estimated RI','fontsize',20,'fontweight','bold')
 xlabel('Total # of Angular Samples','fontsize',20,'fontweight','bold')
 xlim([0 68])
 ylim([1 1.8])
-title({'Effect of total angular samples on RI'},'fontsize',14)
+title({'Effect of total angular samples on tube RI'},'fontsize',14)
 
 save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Results/' sample_id];
 saveas(f,[save_directory '_RI_combined_plot_tube.png'])
@@ -253,11 +259,11 @@ saveas(f,[save_directory '_RI_combined_plot_tube.png'])
 f = figure('Position',[100 100 500 400]);
 gt = RILimitedRange(1,4);
 hold on
-plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.6 0.6 0.6])
-plot(RILimitedRange(1,1)*2,RILimitedRange(1,4),'*k','markersize',10,'linewidth',2);
+plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.3 0.3 0.3])
+% plot(RILimitedRange(1,1)*2,RILimitedRange(1,4),'diamondk','markersize',10,'linewidth',2);
 plot(RILimitedRange(:,1)*2,RILimitedRange(:,4),'--','linewidth',2,'color',[0 0.5 0.8]);
 plot(RILimitedRange(:,1)*2,RILimitedRange(:,4),'.k','linewidth',2,'markersize',20);
-legend(['Ground Truth','Fully Sampled OCRT'],'fontsize',14,'location','southeast')
+legend(['Ground Truth'],'fontsize',14,'location','southeast')
 hold off
 ax = gca;
 ax.FontSize = 18;
@@ -274,9 +280,9 @@ saveas(f,[save_directory '_limited_range_plot_sample.png'])
 %%
 f = figure('Position',[100 100 500 400]);
 hold on
-plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.6 0.6 0.6])
-plot(RILimitedSampling(:,2),RILimitedSampling(:,4),'--','linewidth',2,'color',[0.8 0.4 0.2]);
-plot(RILimitedSampling(:,2),RILimitedSampling(:,4),'.k','linewidth',2,'markersize',20);
+plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.3 0.3 0.3])
+plot(RILimitedSampling(2:end,2),RILimitedSampling(2:end,4),'--','linewidth',2,'color',[0.8 0.4 0.2]);
+plot(RILimitedSampling(2:end,2),RILimitedSampling(2:end,4),'.k','linewidth',2,'markersize',20);
 legend(['Ground Truth'],'fontsize',14,'location','southeast')
 hold off
 ax = gca;
@@ -298,14 +304,17 @@ saveas(f,[save_directory '_limited_sampling_plot_sample.png'])
 
 f = figure('Position',[100 100 500 400]);
 hold on
-plot(RILimitedRange(2:end,5),RILimitedRange(2:end,4),'--','linewidth',2,'color',[0 0.5 0.8]);
+plot(RILimitedRange(:,5),RILimitedRange(:,4),'-.','linewidth',2,'color',[0 0.5 0.8]);
 plot(RILimitedSampling(:,5),RILimitedSampling(:,4),'--','linewidth',2,'color',[0.8 0.4 0.2]);
-plot([31 31],[0 80],'k:','linewidth',1.5)
-plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.6 0.6 0.6])
-plot(RILimitedRange(1,5),RILimitedRange(1,4),'*k','markersize',10,'linewidth',2)
-plot(RILimitedRange(2:end,5),RILimitedRange(2:end,4),'.k','linewidth',2,'markersize',20);
-plot(RILimitedSampling(:,5),RILimitedSampling(:,4),'.k','linewidth',2,'markersize',20);
-legend('Increasing Angular Range','Decreasing Angular Interval','180\circ Range, 6\circ Interval Sampling','Ground Truth','Fully Sampled OCRT','fontsize',12,'location','southeast')
+plot(RILimitedRange(2,5),RILimitedRange(2,4),'k^','linewidth',2,'markersize',10);
+% plot([31 31],[0 80],'k:','linewidth',1.5)
+plot(RILimitedRange(1,5),RILimitedRange(1,4),'diamondk','markersize',10,'linewidth',2)
+plot([0 380],[gt gt],'k--','linewidth',0.5,'color',[0.3 0.3 0.3])
+
+plot(RILimitedRange(3:end,5),RILimitedRange(3:end,4),'.k','linewidth',2,'markersize',20);
+plot(RILimitedSampling(3:end,5),RILimitedSampling(3:end,4),'.k','linewidth',2,'markersize',20);
+
+legend('Increasing Angular Range','Decreasing Angular Interval','180\circ Range, 6\circ Interval Sampling','Fully Sampled OCRT','Ground Truth','fontsize',12,'location','southeast')
 
 hold off
 ax = gca;
@@ -314,7 +323,7 @@ ylabel('Estimated RI','fontsize',20,'fontweight','bold')
 xlabel('Total # of Angular Samples','fontsize',20,'fontweight','bold')
 xlim([0 68])
 ylim([1 1.5])
-title({'Effect of total angular samples on RI'},'fontsize',14)
+title({'Effect of total angular samples on sample RI'},'fontsize',14)
 
 save_directory = ['c:/Users/DEL-AIProjects/Documents/GitHub/limited_angle_ocrt_local_saves/Results/' sample_id];
 saveas(f,[save_directory '_RI_combined_plot_sample.png'])
