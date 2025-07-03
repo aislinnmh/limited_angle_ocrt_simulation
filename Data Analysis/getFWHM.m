@@ -11,7 +11,7 @@ save_dir = ['C:/Users/bundr/Documents/Research/Robotic OCRT/Limited Angle Projec
 % average multiple next
 
 bscan = rescale(bscan);
-[j,i] = find(islocalmax(bscan,'MinProminence',0.8)); % row, col
+[j,i] = find(islocalmax(bscan,'MaxNumExtrema',20,'FlatSelection','center','MinProminence',0.8)); % row, col
 length(i)
 
 % map = zeros(zpixels,Ascans);
@@ -22,9 +22,8 @@ length(i)
 
 % FWHM Lateral
 zbeadi = unique(i);
-% create an array with all detected beads centered
-center = Ascans/2+1;
-centered_stack = [];
+fwhm_xs =[];
+
 for k = 1:length(zbeadi)
     zi = zbeadi(k);
     line = squeeze(bscan(:,zi));
@@ -33,28 +32,29 @@ for k = 1:length(zbeadi)
     beadj = find(line==maximum);
     beadj = beadj(1); % only one bead per line if encountered
     
-    diff = center-beadj;
-    centered = circshift(line,diff);
-    centered_stack = [centered_stack centered];
+    if beadj >10 && beadj <1014
+        w=10;
+        psf = line(beadj-w:beadj+w);
+        psf = psf - min(psf);
+        f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.1));
+        if max_angle==0
+            f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.1) + (psf>=0.9));
+        end
+        sigma = f.c1;
+        fwhm_xs = [fwhm_xs sigma * 2.35482 * umpp_x];
+    end
 end
-combinedPSF = mean(centered_stack,2);
-w = 10;
-psf = combinedPSF(center-w:center+w);
-psf = psf - min(psf);
+
 f1 = figure(1);
 clf(1)
-% Fit to gaussian
-f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.15))
-if max_angle==0
-    f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.2) + (psf>=0.9))
-end
+
 hold on
 plot(psf,'.k')
 plot(f)
 legend('','','location','northeastoutside')
 hold off
 sigma = f.c1;
-fwhm_x = sigma * 2.35482 * umpp_x
+fwhm_x = mean(fwhm_xs);
 psf_x = psf;
 
 
@@ -63,37 +63,36 @@ saveas(f1, [save_dir 'psf_x.png'])
 
 % FWHM Axial
 xbeadj = unique(j);
-% create an array with all detected beads centered
-center = zpixels/2+1;
-centered_stack = [];
-for k = 1:length(xbeadj)
+fwhm_zs =[];
+
+for k = 1:length(zbeadi)
     xj = xbeadj(k);
     line = squeeze(bscan(xj,:)).';
 
     maximum = max(line);
     beadi = find(line==maximum);
     beadi = beadi(1); % only one bead per line if encountered
-
-    diff = center-beadi;
-    centered = circshift(line,diff);
-    centered_stack = [centered_stack centered];
+    
+    if beadi >10 && beadi <1014
+        w=10;
+        psf = line(beadi-w:beadi+w);
+        psf = psf - min(psf);
+        f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0));
+        sigma = f.c1;
+        fwhm_zs = [fwhm_zs sigma * 2.35482 * umpp_z];
+    end
 end
-combinedPSF = mean(centered_stack,2);
-w = 10;
-psf = combinedPSF(center-w:center+w);
-psf = psf - min(psf);
+
 f2 = figure(2);
-% Fit to gaussian
-f = fit((1:length(psf)).',psf,'gauss1','Exclude', (psf<0.14))
 clf(2)
+
 hold on
 plot(psf,'.k')
 plot(f)
 legend('','','location','northeastoutside')
 hold off
 sigma = f.c1;
-fwhm_z = sigma * 2.35482 * umpp_z
+fwhm_z = mean(fwhm_zs);
 psf_z = psf;
 
-saveas(f2, [save_dir 'psf_z.png'])
 end

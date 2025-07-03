@@ -1,9 +1,9 @@
 
-% max_angles = [90, 60, 30, 18, 90, 90, 0];
-% intervals = [6, 6, 6, 6, 18, 30, 0];
-
-max_angles = 18;
-intervals = 6;
+max_angles = [90, 60, 30, 18, 90, 90, 0];
+intervals = [6, 6, 6, 6, 18, 30, 0];
+% 
+% max_angles = 0;
+% intervals = 0;
 
 fwhm_x_list = [];
 fwhm_z_list = [];
