@@ -2,7 +2,6 @@ import numpy as np
 import tensorflow as tf
 import scipy.ndimage
 import os
-from time import time
 from PIL import Image
 
 class angularOCTSim2D:
